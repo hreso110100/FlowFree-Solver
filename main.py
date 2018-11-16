@@ -1,5 +1,6 @@
 import pygame
 import json
+import numpy
 
 # game constants
 FPS = 30
@@ -38,14 +39,25 @@ def parse_color_from_json(color):
 
 # load levels data from json file
 def load_level(loaded_level):
+    global game_array
+
+    game_array = numpy.empty((6, 6), dtype=object)
+    text_font_big = pygame.font.SysFont("comicsansms", 28)
+
+    generate_surfaces()
+    generate_buttons()
+
     with open('assets/levels.json') as levels_file:
         levels_file = json.load(levels_file)
         level_one = levels_file["levels"][loaded_level]
 
-        print(loaded_level)
-
         for dot in level_one["dots"]:
             pygame.draw.circle(grid_surface, parse_color_from_json(dot["color"]), (dot["x"], dot["y"]), 25)
+            game_array[dot["index_y"]][dot["index_x"]] = dot["color"]
+
+        text_level_indicator = text_font_big.render("LEVEL {id}".format(id=level_one["id"]), False, GREEN_CYAN)
+        main_surface.blit(text_level_indicator, (430, 0))
+        print(game_array)
 
 
 # displays new level
@@ -100,37 +112,44 @@ def generate_surfaces():
 
 # generate fonts
 def generate_fonts():
-    text_font = pygame.font.SysFont("comicsansms", 24)
-    text_flows_label = text_font.render("Flows", False, WHITE)
-    text_flows_value = text_font.render("0/6", False, PURPLE)
-    text_pipes_label = text_font.render("Pipe", False, WHITE)
-    text_pipes_value = text_font.render("0 %", False, PURPLE)
-    text_moves_label = text_font.render("Moves", False, WHITE)
-    text_moves_value = text_font.render("0", False, PURPLE)
+    text_font_big = pygame.font.SysFont("comicsansms", 24)
+
+    text_flows_label = text_font_big.render("Flows", False, WHITE)
+    text_flows_value = text_font_big.render("0/6", False, PURPLE)
+    text_pipes_label = text_font_big.render("Pipe", False, WHITE)
+    text_pipes_value = text_font_big.render("0 %", False, PURPLE)
+    text_moves_label = text_font_big.render("Moves", False, WHITE)
+    text_moves_value = text_font_big.render("0", False, PURPLE)
 
     main_surface.blit(grid_surface, (10, 10))
-    main_surface.blit(text_flows_label, (400, 30))
-    main_surface.blit(text_flows_value, (490, 30))
-    main_surface.blit(text_pipes_label, (400, 70))
-    main_surface.blit(text_pipes_value, (490, 70))
-    main_surface.blit(text_moves_label, (400, 110))
-    main_surface.blit(text_moves_value, (490, 110))
+    main_surface.blit(text_flows_label, (400, 50))
+    main_surface.blit(text_flows_value, (500, 50))
+    main_surface.blit(text_pipes_label, (400, 90))
+    main_surface.blit(text_pipes_value, (500, 90))
+    main_surface.blit(text_moves_label, (400, 130))
+    main_surface.blit(text_moves_value, (500, 130))
 
 
 # generate buttons
 def generate_buttons():
-    pygame.draw.rect(main_surface, WHITE, (400, 290, 150, 30))
+    text_font_small = pygame.font.SysFont("comicsansms", 16)
+
+    # restart button
+    restart_button_text = text_font_small.render("Restart", False, WHITE)
+    pygame.draw.rect(main_surface, PURPLE, (400, 290, 150, 30))
+    main_surface.blit(restart_button_text, (445, 295))
+
+    new_level_button_text = text_font_small.render("New level", False, PURPLE)
     pygame.draw.rect(main_surface, WHITE, (400, 340, 150, 30))
+    main_surface.blit(new_level_button_text, (445, 345))
 
 
 init_game()
-generate_surfaces()
 load_level(current_level)
-generate_fonts()
-generate_buttons()
 
 while running:
-    clock.tick(FPS)
+
+    generate_fonts()
 
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
@@ -139,3 +158,4 @@ while running:
             handle_click_buttons()
 
     pygame.display.flip()
+    clock.tick(FPS)
