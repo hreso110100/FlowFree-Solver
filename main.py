@@ -1,6 +1,7 @@
 import pygame
 import json
 import numpy
+import time
 
 # game constants
 FPS = 30
@@ -21,27 +22,28 @@ YELLOW = (255, 234, 0)
 # global variables
 current_level = 0
 running = True
+game_array = numpy.empty((6, 6), dtype="U10")
+available_colors = ["RED", "BLUE", "GREEN", "PURPLE", "YELLOW"]
+connected_colors = []
+visited_cells = {}
 
 
 # parse color read from json to RGB tuple
 def parse_color_from_json(color):
     if color == "RED":
-        return 211, 47, 47
+        return RED
     elif color == "GREEN":
-        return 76, 175, 80
+        return GREEN
     elif color == "BLUE":
-        return 0, 145, 234
+        return BLUE
     elif color == "YELLOW":
-        return 255, 234, 0
+        return YELLOW
     elif color == "PURPLE":
-        return 103, 58, 183
+        return PURPLE
 
 
 # load levels data from json file
 def load_level(loaded_level):
-    global game_array
-
-    game_array = numpy.empty((6, 6), dtype=object)
     text_font_big = pygame.font.SysFont("comicsansms", 28)
 
     generate_surfaces()
@@ -57,7 +59,6 @@ def load_level(loaded_level):
 
         text_level_indicator = text_font_big.render("LEVEL {id}".format(id=level_one["id"]), False, GREEN_CYAN)
         main_surface.blit(text_level_indicator, (430, 0))
-        print(game_array)
 
 
 # displays new level
@@ -72,6 +73,65 @@ def generate_new_level():
     load_level(current_level)
 
 
+# find possible options:
+def find_possible_options(position, color):
+    options = []
+
+    if 0 < position[0] < len(game_array) - 1:
+        if not [position[0] + 1, position[1]] in visited_cells:
+            options.append((position[0] + 1, position[1]))
+        if not game_array[position[0] - 1, position[1]] in visited_cells:
+            options.append((position[0] - 1, position[1]))
+
+    elif position[0] == 0:
+        if game_array[position[0] + 1, position[1]] == "" in visited_cells:
+            options.append((position[0] + 1, position[1]))
+
+    elif position[0] == len(game_array) - 1:
+        if game_array[position[0] - 1, position[1]] == "" in visited_cells:
+            options.append((position[0] - 1, position[1]))
+
+    if 0 < position[1] < len(game_array) - 1:
+        if game_array[position[0], position[1] + 1] == "" or game_array[position[0], position[1] + 1] == color:
+            options.append((position[0], position[1] + 1))
+        if game_array[position[0], position[1] - 1] == "" or game_array[position[0], position[1] - 1] == color:
+            options.append((position[0], position[1] - 1))
+
+    elif position[1] == 0:
+        if game_array[position[0], position[1] + 1] == "" or game_array[position[0], position[1] + 1] == color:
+            options.append((position[0], position[1] + 1))
+
+    elif position[1] == len(game_array) - 1:
+        if game_array[position[0], position[1] - 1] == "" or game_array[position[0], position[1] - 1] == color:
+            options.append((position[0], position[1] - 1))
+
+    print("POSSIBLE MOVES: {options}".format(options=options))
+
+    return options
+
+
+# backtrack implementation
+def solve():
+    solved = False
+    actual_color = available_colors[0]
+    current_position = numpy.argwhere(game_array == actual_color)[0]
+    final_position = numpy.argwhere(game_array == actual_color)[1]
+
+    while not solved:
+        options = find_possible_options(current_position, actual_color)
+
+        if current_position[0] == final_position[0] and current_position[1] == final_position[1]:
+            available_colors.remove(actual_color)
+            connected_colors.append(actual_color)
+            solved = True
+        for option in options:
+            game_array[option[0]][option[1]] = actual_color
+            pygame.draw.circle(grid_surface, parse_color_from_json(actual_color),
+                               (option[1] * 60 + 30, option[0] * 60 + 30), 25)
+            visited_cells[option] = actual_color
+            break
+
+
 # handles click events on button
 def handle_click_buttons():
     mouse_position = pygame.mouse.get_pos()
@@ -83,6 +143,9 @@ def handle_click_buttons():
     # new level button click handling
     elif 550 > mouse_position[0] > 400 and 370 > mouse_position[1] > 340:
         generate_new_level()
+    # solve level button click handling
+    elif 550 > mouse_position[0] > 400 and 270 > mouse_position[1] > 240:
+        solve()
 
 
 # init game
@@ -134,11 +197,17 @@ def generate_fonts():
 def generate_buttons():
     text_font_small = pygame.font.SysFont("comicsansms", 16)
 
+    # solve button
+    solve_button_text = text_font_small.render("Solve", False, PURPLE)
+    pygame.draw.rect(main_surface, WHITE, (400, 240, 150, 30))
+    main_surface.blit(solve_button_text, (453, 245))
+
     # restart button
     restart_button_text = text_font_small.render("Restart", False, WHITE)
     pygame.draw.rect(main_surface, PURPLE, (400, 290, 150, 30))
     main_surface.blit(restart_button_text, (445, 295))
 
+    # new level button
     new_level_button_text = text_font_small.render("New level", False, PURPLE)
     pygame.draw.rect(main_surface, WHITE, (400, 340, 150, 30))
     main_surface.blit(new_level_button_text, (445, 345))
