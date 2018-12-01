@@ -26,6 +26,9 @@ game_array = numpy.empty((6, 6), dtype="U10")
 available_colors = ["RED", "BLUE", "GREEN", "PURPLE", "YELLOW"]
 connected_colors = []
 visited_cells = {}
+actual_color = ""
+start_position = []
+final_position = []
 
 
 # parse color read from json to RGB tuple
@@ -60,6 +63,11 @@ def load_level(loaded_level):
         text_level_indicator = text_font_big.render("LEVEL {id}".format(id=level_one["id"]), False, GREEN_CYAN)
         main_surface.blit(text_level_indicator, (430, 0))
 
+    global actual_color, start_position, final_position
+    actual_color = available_colors[0]
+    start_position = numpy.argwhere(game_array == actual_color)[0]
+    final_position = numpy.argwhere(game_array == actual_color)[1]
+
 
 # displays new level
 def generate_new_level():
@@ -74,36 +82,43 @@ def generate_new_level():
 
 
 # find possible options:
-def find_possible_options(position, color):
+def find_possible_options(position):
     options = []
 
     if 0 < position[0] < len(game_array) - 1:
-        if not [position[0] + 1, position[1]] in visited_cells:
-            options.append((position[0] + 1, position[1]))
-        if not game_array[position[0] - 1, position[1]] in visited_cells:
-            options.append((position[0] - 1, position[1]))
+        if [position[0], position[1] + 1] not in visited_cells.values() and game_array[position[0], position[1] + 1] == "":
+            options.append((position[0], position[1] + 1))
+        if game_array[position[0], position[1] - 1] not in visited_cells.values() \
+                and game_array[position[0], position[1] - 1] == "":
+            options.append((position[0], position[1] - 1))
 
     elif position[0] == 0:
-        if game_array[position[0] + 1, position[1]] == "" in visited_cells:
-            options.append((position[0] + 1, position[1]))
+        if [position[0], position[1] + 1] not in visited_cells.values() \
+                and game_array[position[0], position[1] + 1] == "":
+            options.append((position[0], position[1] + 1))
 
     elif position[0] == len(game_array) - 1:
-        if game_array[position[0] - 1, position[1]] == "" in visited_cells:
-            options.append((position[0] - 1, position[1]))
+        if not game_array[position[0], position[1] - 1] in visited_cells.values() \
+                and game_array[position[0], position[1] - 1] == "":
+            options.append((position[0], position[1] - 1))
 
     if 0 < position[1] < len(game_array) - 1:
-        if game_array[position[0], position[1] + 1] == "" or game_array[position[0], position[1] + 1] == color:
-            options.append((position[0], position[1] + 1))
-        if game_array[position[0], position[1] - 1] == "" or game_array[position[0], position[1] - 1] == color:
-            options.append((position[0], position[1] - 1))
+        if game_array[position[0] + 1, position[1]] not in visited_cells.values() \
+                and [position[0] + 1, position[1]] == "":
+            options.append((position[0] + 1, position[1]))
+        if game_array[position[0] - 1, position[1]] not in visited_cells.values() \
+                and [position[0] - 1, position[1]] == "":
+            options.append((position[0] - 1, position[1]))
 
     elif position[1] == 0:
-        if game_array[position[0], position[1] + 1] == "" or game_array[position[0], position[1] + 1] == color:
-            options.append((position[0], position[1] + 1))
+        if game_array[position[0] + 1, position[1]] not in visited_cells.values() \
+                and [position[0] + 1, position[1]] == "":
+            options.append((position[0] + 1, position[1]))
 
     elif position[1] == len(game_array) - 1:
-        if game_array[position[0], position[1] - 1] == "" or game_array[position[0], position[1] - 1] == color:
-            options.append((position[0], position[1] - 1))
+        if game_array[position[0] - 1, position[1]] not in visited_cells.values() \
+                and [position[0] - 1, position[1]] == "":
+            options.append((position[0] - 1, position[1]))
 
     print("POSSIBLE MOVES: {options}".format(options=options))
 
@@ -111,25 +126,23 @@ def find_possible_options(position, color):
 
 
 # backtrack implementation
-def solve():
-    solved = False
-    actual_color = available_colors[0]
-    current_position = numpy.argwhere(game_array == actual_color)[0]
-    final_position = numpy.argwhere(game_array == actual_color)[1]
+def solve(current_position):
 
-    while not solved:
-        options = find_possible_options(current_position, actual_color)
+    options = find_possible_options(current_position)
+    visited_cells[actual_color] = current_position
 
-        if current_position[0] == final_position[0] and current_position[1] == final_position[1]:
-            available_colors.remove(actual_color)
-            connected_colors.append(actual_color)
-            solved = True
-        for option in options:
-            game_array[option[0]][option[1]] = actual_color
-            pygame.draw.circle(grid_surface, parse_color_from_json(actual_color),
-                               (option[1] * 60 + 30, option[0] * 60 + 30), 25)
-            visited_cells[option] = actual_color
-            break
+    if current_position[0] == final_position[0] and current_position[1] == final_position[1]:
+        available_colors.remove(actual_color)
+        connected_colors.append(actual_color)
+        return
+
+    for option in options:
+        game_array[option[0]][option[1]] = actual_color
+        pygame.draw.circle(grid_surface, parse_color_from_json(actual_color),
+                           (option[1] * 60 + 30, option[0] * 60 + 30), 25)
+        current_position = option
+        visited_cells[actual_color] = option
+        solve(current_position)
 
 
 # handles click events on button
@@ -143,9 +156,10 @@ def handle_click_buttons():
     # new level button click handling
     elif 550 > mouse_position[0] > 400 and 370 > mouse_position[1] > 340:
         generate_new_level()
+
     # solve level button click handling
     elif 550 > mouse_position[0] > 400 and 270 > mouse_position[1] > 240:
-        solve()
+        solve(start_position)
 
 
 # init game
