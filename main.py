@@ -1,7 +1,6 @@
-import pygame
 import json
 import numpy
-import time
+import pygame
 
 # game constants
 FPS = 30
@@ -22,10 +21,9 @@ YELLOW = (255, 234, 0)
 # global variables
 current_level = 0
 running = True
-game_array = numpy.empty((6, 6), dtype="U10")
 available_colors = ["RED", "BLUE", "GREEN", "PURPLE", "YELLOW"]
 connected_colors = []
-visited_cells = {}
+visited_cells = []
 actual_color = ""
 start_position = []
 final_position = []
@@ -47,7 +45,9 @@ def parse_color_from_json(color):
 
 # load levels data from json file
 def load_level(loaded_level):
+    global game_array
     text_font_big = pygame.font.SysFont("comicsansms", 28)
+    game_array = numpy.empty((6, 6), dtype="U10")
 
     generate_surfaces()
     generate_buttons()
@@ -64,7 +64,7 @@ def load_level(loaded_level):
         main_surface.blit(text_level_indicator, (430, 0))
 
     global actual_color, start_position, final_position
-    actual_color = available_colors[0]
+    actual_color = available_colors[4]
     start_position = numpy.argwhere(game_array == actual_color)[0]
     final_position = numpy.argwhere(game_array == actual_color)[1]
 
@@ -85,40 +85,41 @@ def generate_new_level():
 def find_possible_options(position):
     options = []
 
-    if 0 < position[0] < len(game_array) - 1:
-        if [position[0], position[1] + 1] not in visited_cells.values() and game_array[position[0], position[1] + 1] == "":
-            options.append((position[0], position[1] + 1))
-        if game_array[position[0], position[1] - 1] not in visited_cells.values() \
-                and game_array[position[0], position[1] - 1] == "":
-            options.append((position[0], position[1] - 1))
-
-    elif position[0] == 0:
-        if [position[0], position[1] + 1] not in visited_cells.values() \
-                and game_array[position[0], position[1] + 1] == "":
-            options.append((position[0], position[1] + 1))
-
-    elif position[0] == len(game_array) - 1:
-        if not game_array[position[0], position[1] - 1] in visited_cells.values() \
-                and game_array[position[0], position[1] - 1] == "":
-            options.append((position[0], position[1] - 1))
+    # x axis checking, yep indexes are swapped :(
 
     if 0 < position[1] < len(game_array) - 1:
-        if game_array[position[0] + 1, position[1]] not in visited_cells.values() \
-                and [position[0] + 1, position[1]] == "":
-            options.append((position[0] + 1, position[1]))
-        if game_array[position[0] - 1, position[1]] not in visited_cells.values() \
-                and [position[0] - 1, position[1]] == "":
-            options.append((position[0] - 1, position[1]))
+        if [position[0], position[1] + 1] not in visited_cells \
+                and (game_array[position[0], position[1] + 1] == "" or (final_position[0] == position[0] and final_position[1] == position[1])):
+            options.append([position[0], position[1] + 1])
+        if [position[0], position[1] - 1] not in visited_cells \
+                and (game_array[position[0], position[1] - 1] == "" or (final_position[0] == position[0] and final_position[1] == position[1])):
+            options.append([position[0], position[1] - 1])
 
     elif position[1] == 0:
-        if game_array[position[0] + 1, position[1]] not in visited_cells.values() \
-                and [position[0] + 1, position[1]] == "":
-            options.append((position[0] + 1, position[1]))
+        if [position[0], position[1] + 1] not in visited_cells\
+                and (game_array[position[0], position[1] + 1] == "" or (final_position[0] == position[0] and final_position[1] == position[1])):
+            options.append([position[0], position[1] + 1])
 
     elif position[1] == len(game_array) - 1:
-        if game_array[position[0] - 1, position[1]] not in visited_cells.values() \
-                and [position[0] - 1, position[1]] == "":
-            options.append((position[0] - 1, position[1]))
+        if [position[0], position[1] - 1] not in visited_cells\
+                and (game_array[position[0], position[1] - 1] == "" or (final_position[0] == position[0] and final_position[1] == position[1])):
+            options.append([position[0], position[1] - 1])
+
+    # y axis checking, yep indexes are swapped :(
+
+    # if 0 < position[0] < len(game_array) - 1:
+    #     if [position[0] + 1, position[1]] not in visited_cells and game_array[position[0] + 1, position[1]] == "":
+    #         options.append([position[0] + 1, position[1]])
+    #     if [position[0] - 1, position[1]] not in visited_cells and game_array[position[0] - 1, position[1]] == "":
+    #         options.append([position[0] - 1, position[1]])
+    #
+    # elif position[0] == 0:
+    #     if [position[0] + 1, position[1]] not in visited_cells and game_array[position[0] + 1, position[1]] == "":
+    #         options.append([position[0] + 1, position[1]])
+    #
+    # elif position[0] == len(game_array) - 1:
+    #     if [position[0] - 1, position[1]] not in visited_cells and game_array[position[0] - 1, position[1]] == "":
+    #         options.append([position[0] - 1, position[1]])
 
     print("POSSIBLE MOVES: {options}".format(options=options))
 
@@ -127,22 +128,25 @@ def find_possible_options(position):
 
 # backtrack implementation
 def solve(current_position):
-
     options = find_possible_options(current_position)
-    visited_cells[actual_color] = current_position
+
+    if len(options) != 0:
+        option = options[0]
+        visited_cells.append([current_position])
+    else:
+        print("NO OPTIONS")
+        return
 
     if current_position[0] == final_position[0] and current_position[1] == final_position[1]:
         available_colors.remove(actual_color)
         connected_colors.append(actual_color)
+        print("FINISH")
         return
 
-    for option in options:
-        game_array[option[0]][option[1]] = actual_color
-        pygame.draw.circle(grid_surface, parse_color_from_json(actual_color),
-                           (option[1] * 60 + 30, option[0] * 60 + 30), 25)
-        current_position = option
-        visited_cells[actual_color] = option
-        solve(current_position)
+    game_array[option[0]][option[1]] = actual_color
+    pygame.draw.circle(grid_surface, parse_color_from_json(actual_color),
+                       (option[1] * 60 + 30, option[0] * 60 + 30), 25)
+    solve(option)
 
 
 # handles click events on button
