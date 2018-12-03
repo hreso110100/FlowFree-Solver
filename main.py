@@ -89,36 +89,48 @@ def find_possible_options(position):
 
     if 0 < position[1] < len(game_array) - 1:
         if [position[0], position[1] + 1] not in visited_cells \
-                and (game_array[position[0], position[1] + 1] == "" or (final_position[0] == position[0] and final_position[1] == position[1] + 1)):
+                and (game_array[position[0], position[1] + 1] == "" or (
+                final_position[0] == position[0] and final_position[1] == position[1] + 1)):
             options.append([position[0], position[1] + 1])
         if [position[0], position[1] - 1] not in visited_cells \
-                and (game_array[position[0], position[1] - 1] == "" or (final_position[0] == position[0] and final_position[1] == position[1] -1)):
+                and (game_array[position[0], position[1] - 1] == "" or (
+                final_position[0] == position[0] and final_position[1] == position[1] - 1)):
             options.append([position[0], position[1] - 1])
 
     elif position[1] == 0:
-        if [position[0], position[1] + 1] not in visited_cells\
-                and (game_array[position[0], position[1] + 1] == "" or (final_position[0] == position[0] and final_position[1] == position[1] + 1)):
+        if [position[0], position[1] + 1] not in visited_cells \
+                and (game_array[position[0], position[1] + 1] == "" or (
+                final_position[0] == position[0] and final_position[1] == position[1] + 1)):
             options.append([position[0], position[1] + 1])
 
     elif position[1] == len(game_array) - 1:
-        if [position[0], position[1] - 1] not in visited_cells\
-                and (game_array[position[0], position[1] - 1] == "" or (final_position[0] == position[0] and final_position[1] == position[1] - 1)):
+        if [position[0], position[1] - 1] not in visited_cells \
+                and (game_array[position[0], position[1] - 1] == "" or (
+                final_position[0] == position[0] and final_position[1] == position[1] - 1)):
             options.append([position[0], position[1] - 1])
 
     # y axis checking, yep indexes are swapped :(
 
     if 0 < position[0] < len(game_array) - 1:
-        if [position[0] + 1, position[1]] not in visited_cells and game_array[position[0] + 1, position[1]] == "":
+        if [position[0] + 1, position[1]] not in visited_cells \
+                and (game_array[position[0] + 1, position[1]] == "" or (
+                final_position[0] == position[0] + 1 and final_position[1] == position[1])):
             options.append([position[0] + 1, position[1]])
-        if [position[0] - 1, position[1]] not in visited_cells and game_array[position[0] - 1, position[1]] == "":
+        if [position[0] - 1, position[1]] not in visited_cells \
+                and (game_array[position[0] - 1, position[1]] == "" or (
+                final_position[0] == position[0] - 1 and final_position[1] == position[1])):
             options.append([position[0] - 1, position[1]])
 
     elif position[0] == 0:
-        if [position[0] + 1, position[1]] not in visited_cells and game_array[position[0] + 1, position[1]] == "":
+        if [position[0] + 1, position[1]] not in visited_cells \
+                and (game_array[position[0] + 1, position[1]] == "" or (
+                final_position[0] == position[0] + 1 and final_position[1] == position[1])):
             options.append([position[0] + 1, position[1]])
 
     elif position[0] == len(game_array) - 1:
-        if [position[0] - 1, position[1]] not in visited_cells and game_array[position[0] - 1, position[1]] == "":
+        if [position[0] - 1, position[1]] not in visited_cells \
+                and (game_array[position[0] - 1, position[1]] == "" or (
+                final_position[0] == position[0] - 1 and final_position[1] == position[1])):
             options.append([position[0] - 1, position[1]])
 
     print("POSSIBLE MOVES: {options}".format(options=options))
@@ -146,9 +158,11 @@ def solve(current_position):
     game_array[option[0]][option[1]] = actual_color
     pygame.draw.circle(grid_surface, parse_color_from_json(actual_color),
                        (option[1] * 60 + 30, option[0] * 60 + 30), 25)
+    print(game_array)
     solve(option)
 
-   # THERE IS NOTHING HOLDIN ME BACK - SHAWN MENDES
+
+# THERE IS NOTHING HOLDIN ME BACK - SHAWN MENDES
 
 
 # handles click events on button
