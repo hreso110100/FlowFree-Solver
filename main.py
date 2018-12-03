@@ -27,6 +27,7 @@ visited_cells = []
 actual_color = ""
 start_position = []
 final_position = []
+backtrack_index = 0
 
 
 # parse color read from json to RGB tuple
@@ -140,6 +141,7 @@ def find_possible_options(position):
 
 # backtrack implementation
 def solve(current_position):
+    global backtrack_index
     options = find_possible_options(current_position)
 
     if current_position[0] == final_position[0] and current_position[1] == final_position[1]:
@@ -151,18 +153,15 @@ def solve(current_position):
     if len(options) != 0:
         option = options[0]
         visited_cells.append([current_position])
+        game_array[option[0]][option[1]] = actual_color
+        pygame.draw.circle(grid_surface, parse_color_from_json(actual_color),
+                           (option[1] * 60 + 30, option[0] * 60 + 30), 25)
     else:
-        print("NO OPTIONS")
-        return
+        backtrack_index -= 1
+        option = visited_cells[backtrack_index]
+        print(visited_cells[backtrack_index])
 
-    game_array[option[0]][option[1]] = actual_color
-    pygame.draw.circle(grid_surface, parse_color_from_json(actual_color),
-                       (option[1] * 60 + 30, option[0] * 60 + 30), 25)
-    print(game_array)
     solve(option)
-
-
-# THERE IS NOTHING HOLDIN ME BACK - SHAWN MENDES
 
 
 # handles click events on button
