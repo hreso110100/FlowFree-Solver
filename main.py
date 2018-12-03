@@ -187,7 +187,7 @@ def init_game():
 
     pygame.init()
     clock = pygame.time.Clock()
-    icon = pygame.image.load('assets\logo.jpg')
+    icon = pygame.image.load('assets/logo.jpg')
     pygame.display.set_icon(icon)
     pygame.display.set_caption("Flow free")
 
@@ -250,7 +250,6 @@ init_game()
 load_level(current_level)
 
 while running:
-
     generate_fonts()
 
     for event in pygame.event.get():
@@ -261,3 +260,8 @@ while running:
 
     pygame.display.flip()
     clock.tick(FPS)
+
+# TODO:1. find solution for one pipe
+# TODO:2. backtrack - deleting of bad attempts
+# TODO:3. on every level check if it can solve every colour
+# TODO:4. check if after solving all levels it will end with statement "You've won !"
