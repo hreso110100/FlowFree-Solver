@@ -21,13 +21,12 @@ YELLOW = (255, 234, 0)
 # global variables
 current_level = 0
 running = True
+solved_index = 0
 available_colors = ["RED", "BLUE", "GREEN", "PURPLE", "YELLOW"]
 connected_colors = []
-visited_cells = []
 actual_color = ""
 start_position = []
 final_position = []
-backtrack_index = 0
 
 
 # parse color read from json to RGB tuple
@@ -46,9 +45,11 @@ def parse_color_from_json(color):
 
 # load levels data from json file
 def load_level(loaded_level):
-    global game_array
+    global game_array, actual_color, start_position, final_position, visited_cells, backtrack_index
     text_font_big = pygame.font.SysFont("comicsansms", 28)
     game_array = numpy.empty((6, 6), dtype="U10")
+    visited_cells = []
+    backtrack_index = 0
 
     generate_surfaces()
     generate_buttons()
@@ -66,8 +67,9 @@ def load_level(loaded_level):
 
     global actual_color, start_position, final_position
     actual_color = available_colors[0]
-    start_position = numpy.argwhere(game_array == actual_color)[0]
-    final_position = numpy.argwhere(game_array == actual_color)[1]
+    start_position = numpy.argwhere(game_array == actual_color).tolist()[0]
+    final_position = numpy.argwhere(game_array == actual_color).tolist()[1]
+    visited_cells.append(start_position)
 
 
 # displays new level
@@ -85,6 +87,11 @@ def generate_new_level():
 # find possible options:
 def find_possible_options(position):
     options = []
+
+    # adding visited position to list
+
+    if not position in visited_cells:
+        visited_cells.append(position)
 
     # x axis checking, yep indexes are swapped :(
 
@@ -110,7 +117,7 @@ def find_possible_options(position):
                 final_position[0] == position[0] and final_position[1] == position[1] - 1)):
             options.append([position[0], position[1] - 1])
 
-    # y axis checking, yep indexes are swapped :(
+    # # y axis checking, yep indexes are swapped :(
 
     if 0 < position[0] < len(game_array) - 1:
         if [position[0] + 1, position[1]] not in visited_cells \
@@ -141,26 +148,34 @@ def find_possible_options(position):
 
 # backtrack implementation
 def solve(current_position):
-    global backtrack_index
-    options = find_possible_options(current_position)
+    global backtrack_index, actual_color, solved_index
+
+    print("CURRENT POSITION", current_position)
 
     if current_position[0] == final_position[0] and current_position[1] == final_position[1]:
-        available_colors.remove(actual_color)
         connected_colors.append(actual_color)
+        solved_index += 1
+        actual_color = available_colors[solved_index]
         print("FINISH")
         return
 
+    options = find_possible_options(current_position)
+
     if len(options) != 0:
         option = options[0]
-        visited_cells.append([current_position])
         game_array[option[0]][option[1]] = actual_color
         pygame.draw.circle(grid_surface, parse_color_from_json(actual_color),
                            (option[1] * 60 + 30, option[0] * 60 + 30), 25)
     else:
-        backtrack_index -= 1
-        option = visited_cells[backtrack_index]
-        print(visited_cells[backtrack_index])
-
+        if len(visited_cells) != 0:
+            game_array[current_position[0]][current_position[1]] = ""
+            pygame.draw.circle(grid_surface, GREY,
+                               (current_position[1] * 60 + 30, current_position[0] * 60 + 30), 25)
+            backtrack_index -= 1
+            option = visited_cells[backtrack_index]
+            print("BACKTRACKUJEM Z", option)
+        else:
+            return
     solve(option)
 
 
