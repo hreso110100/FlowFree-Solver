@@ -42,7 +42,6 @@ def parse_color_from_json(color):
     elif color == "PURPLE":
         return PURPLE
 
-
 # load levels data from json file
 def load_level(loaded_level):
     global game_array, actual_color, start_position, final_position, visited_cells, backtrack_index
@@ -66,7 +65,7 @@ def load_level(loaded_level):
         main_surface.blit(text_level_indicator, (430, 0))
 
     global actual_color, start_position, final_position
-    actual_color = available_colors[0]
+    actual_color = available_colors[solved_index]
     start_position = numpy.argwhere(game_array == actual_color).tolist()[0]
     final_position = numpy.argwhere(game_array == actual_color).tolist()[1]
     visited_cells.append(start_position)
@@ -90,7 +89,7 @@ def find_possible_options(position):
 
     # adding visited position to list
 
-    if not position in visited_cells:
+    if position not in visited_cells:
         visited_cells.append(position)
 
     # x axis checking, yep indexes are swapped :(
@@ -148,14 +147,20 @@ def find_possible_options(position):
 
 # backtrack implementation
 def solve(current_position):
-    global backtrack_index, actual_color, solved_index
+    global backtrack_index, actual_color, solved_index, visited_cells, start_position, final_position
 
     print("CURRENT POSITION", current_position)
 
     if current_position[0] == final_position[0] and current_position[1] == final_position[1]:
         connected_colors.append(actual_color)
-        solved_index += 1
+        if solved_index < len(available_colors) - 1:
+            solved_index += 1
         actual_color = available_colors[solved_index]
+        visited_cells = []
+        backtrack_index = 0
+        start_position = numpy.argwhere(game_array == actual_color).tolist()[0]
+        final_position = numpy.argwhere(game_array == actual_color).tolist()[1]
+        visited_cells.append(start_position)
         print("FINISH")
         return
 
@@ -166,6 +171,7 @@ def solve(current_position):
         game_array[option[0]][option[1]] = actual_color
         pygame.draw.circle(grid_surface, parse_color_from_json(actual_color),
                            (option[1] * 60 + 30, option[0] * 60 + 30), 25)
+        backtrack_index = 0
     else:
         if len(visited_cells) != 0:
             game_array[current_position[0]][current_position[1]] = ""
