@@ -1,6 +1,7 @@
 import json
 import numpy
 import pygame
+import random
 
 # game constants
 FPS = 30
@@ -21,12 +22,7 @@ YELLOW = (255, 234, 0)
 # global variables
 current_level = 0
 running = True
-solved_index = 0
 available_colors = ["RED", "BLUE", "GREEN", "PURPLE", "YELLOW"]
-connected_colors = []
-actual_color = ""
-start_position = []
-final_position = []
 
 
 # parse color read from json to RGB tuple
@@ -42,13 +38,17 @@ def parse_color_from_json(color):
     elif color == "PURPLE":
         return PURPLE
 
+
 # load levels data from json file
 def load_level(loaded_level):
-    global game_array, actual_color, start_position, final_position, visited_cells, backtrack_index
+    global game_array, actual_color, start_position, final_position, visited_cells, connected_colors, \
+        backtrack_index, solved_index
+
     text_font_big = pygame.font.SysFont("comicsansms", 28)
     game_array = numpy.empty((6, 6), dtype="U10")
-    visited_cells = []
-    backtrack_index = 0
+    visited_cells = connected_colors = []
+    actual_color = ""
+    backtrack_index = solved_index = 0
 
     generate_surfaces()
     generate_buttons()
@@ -64,7 +64,6 @@ def load_level(loaded_level):
         text_level_indicator = text_font_big.render("LEVEL {id}".format(id=level_one["id"]), False, GREEN_CYAN)
         main_surface.blit(text_level_indicator, (430, 0))
 
-    global actual_color, start_position, final_position
     actual_color = available_colors[solved_index]
     start_position = numpy.argwhere(game_array == actual_color).tolist()[0]
     final_position = numpy.argwhere(game_array == actual_color).tolist()[1]
@@ -140,8 +139,6 @@ def find_possible_options(position):
                 final_position[0] == position[0] - 1 and final_position[1] == position[1])):
             options.append([position[0] - 1, position[1]])
 
-    print("POSSIBLE MOVES: {options}".format(options=options))
-
     return options
 
 
@@ -152,9 +149,10 @@ def solve(current_position):
     print("CURRENT POSITION", current_position)
 
     if current_position[0] == final_position[0] and current_position[1] == final_position[1]:
-        connected_colors.append(actual_color)
         if solved_index < len(available_colors) - 1:
             solved_index += 1
+
+        connected_colors.append(actual_color)
         actual_color = available_colors[solved_index]
         visited_cells = []
         backtrack_index = 0
@@ -167,13 +165,18 @@ def solve(current_position):
     options = find_possible_options(current_position)
 
     if len(options) != 0:
-        option = options[0]
+        option = random.choice(options)
         game_array[option[0]][option[1]] = actual_color
         pygame.draw.circle(grid_surface, parse_color_from_json(actual_color),
                            (option[1] * 60 + 30, option[0] * 60 + 30), 25)
         backtrack_index = 0
     else:
         if len(visited_cells) != 0:
+
+            if current_position == start_position:
+                load_level(current_level)
+                solve(start_position)
+
             game_array[current_position[0]][current_position[1]] = ""
             pygame.draw.circle(grid_surface, GREY,
                                (current_position[1] * 60 + 30, current_position[0] * 60 + 30), 25)
@@ -181,6 +184,7 @@ def solve(current_position):
             option = visited_cells[backtrack_index]
             print("BACKTRACKUJEM Z", option)
         else:
+            print("CANNOT SOLVE THAT LEVEL")
             return
     solve(option)
 
@@ -282,7 +286,4 @@ while running:
     pygame.display.flip()
     clock.tick(FPS)
 
-# TODO:1. find solution for one pipe
-# TODO:2. backtrack - deleting of bad attempts
-# TODO:3. on every level check if it can solve every colour
 # TODO:4. check if after solving all levels it will end with statement "You've won !"
