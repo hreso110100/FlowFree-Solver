@@ -160,6 +160,7 @@ def solve(current_position):
         final_position = numpy.argwhere(game_array == actual_color).tolist()[1]
         visited_cells.append(start_position)
         print("FINISH")
+        print(game_array)
         return
 
     options = find_possible_options(current_position)
@@ -175,7 +176,7 @@ def solve(current_position):
 
             if current_position == start_position:
                 load_level(current_level)
-                solve(start_position)
+                return
 
             game_array[current_position[0]][current_position[1]] = ""
             pygame.draw.circle(grid_surface, GREY,
