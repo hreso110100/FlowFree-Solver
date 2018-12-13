@@ -46,7 +46,8 @@ def load_level(loaded_level):
 
     text_font_big = pygame.font.SysFont("comicsansms", 28)
     game_array = numpy.empty((6, 6), dtype="U10")
-    visited_cells = connected_colors = []
+    visited_cells = []
+    connected_colors = []
     actual_color = ""
     backtrack_index = solved_index = 0
 
@@ -146,8 +147,6 @@ def find_possible_options(position):
 def solve(current_position):
     global backtrack_index, actual_color, solved_index, visited_cells, start_position, final_position
 
-    print("CURRENT POSITION", current_position)
-
     if current_position[0] == final_position[0] and current_position[1] == final_position[1]:
         if solved_index < len(available_colors) - 1:
             solved_index += 1
@@ -160,7 +159,6 @@ def solve(current_position):
         final_position = numpy.argwhere(game_array == actual_color).tolist()[1]
         visited_cells.append(start_position)
         print("FINISH")
-        print(game_array)
         return
 
     options = find_possible_options(current_position)
@@ -183,7 +181,6 @@ def solve(current_position):
                                (current_position[1] * 60 + 30, current_position[0] * 60 + 30), 25)
             backtrack_index -= 1
             option = visited_cells[backtrack_index]
-            print("BACKTRACKUJEM Z", option)
         else:
             print("CANNOT SOLVE THAT LEVEL")
             return
@@ -204,7 +201,8 @@ def handle_click_buttons():
 
     # solve level button click handling
     elif 550 > mouse_position[0] > 400 and 270 > mouse_position[1] > 240:
-        solve(start_position)
+        while len(connected_colors) != 5:
+            solve(start_position)
 
 
 # init game
@@ -286,5 +284,3 @@ while running:
 
     pygame.display.flip()
     clock.tick(FPS)
-
-# TODO:4. check if after solving all levels it will end with statement "You've won !"
