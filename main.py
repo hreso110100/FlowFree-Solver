@@ -4,7 +4,7 @@ import pygame
 import random
 
 # game constants
-FPS = 30
+FPS = 60
 WIDTH = 600
 HEIGHT = 400
 
@@ -20,7 +20,7 @@ BLUE = (0, 145, 234)
 YELLOW = (255, 234, 0)
 
 # global variables
-current_level = 0
+current_level = tries = solve_value = 0
 running = True
 available_colors = ["RED", "BLUE", "GREEN", "PURPLE", "YELLOW"]
 
@@ -42,7 +42,7 @@ def parse_color_from_json(color):
 # load levels data from json file
 def load_level(loaded_level):
     global game_array, actual_color, start_position, final_position, visited_cells, connected_colors, \
-        backtrack_index, solved_index
+        backtrack_index, solved_index, tries
 
     text_font_big = pygame.font.SysFont("comicsansms", 28)
     game_array = numpy.empty((6, 6), dtype="U10")
@@ -73,7 +73,9 @@ def load_level(loaded_level):
 
 # displays new level
 def generate_new_level():
-    global current_level
+    global current_level, tries
+
+    tries = 0
 
     if current_level < 2:
         current_level += 1
@@ -144,8 +146,9 @@ def find_possible_options(position):
 
 
 # backtrack implementation
-def solve(current_position):
-    global backtrack_index, actual_color, solved_index, visited_cells, start_position, final_position
+# 1 - win , 2 - lost, 0 - nothing
+def solve(current_position) -> int:
+    global backtrack_index, actual_color, solved_index, visited_cells, start_position, final_position, tries
 
     if current_position[0] == final_position[0] and current_position[1] == final_position[1]:
         if solved_index < len(available_colors) - 1:
@@ -158,8 +161,7 @@ def solve(current_position):
         start_position = numpy.argwhere(game_array == actual_color).tolist()[0]
         final_position = numpy.argwhere(game_array == actual_color).tolist()[1]
         visited_cells.append(start_position)
-        print("FINISH")
-        return
+        return 0
 
     options = find_possible_options(current_position)
 
@@ -174,7 +176,8 @@ def solve(current_position):
 
             if current_position == start_position:
                 load_level(current_level)
-                return
+                tries += 1
+                return 0
 
             game_array[current_position[0]][current_position[1]] = ""
             pygame.draw.circle(grid_surface, GREY,
@@ -183,12 +186,17 @@ def solve(current_position):
             option = visited_cells[backtrack_index]
         else:
             print("CANNOT SOLVE THAT LEVEL")
-            return
+            return 2
+    generate_fonts()
+    pygame.display.flip()
     solve(option)
+    return 0
 
 
 # handles click events on button
 def handle_click_buttons():
+    global solve_value
+
     mouse_position = pygame.mouse.get_pos()
 
     # restart button click handling
@@ -203,6 +211,15 @@ def handle_click_buttons():
     elif 550 > mouse_position[0] > 400 and 270 > mouse_position[1] > 240:
         while len(connected_colors) != 5:
             solve(start_position)
+
+
+# check if board is full
+def check_full_board() -> bool:
+    for x in range(0, 6):
+        for y in range(0, 6):
+            if game_array[x][y] == "":
+                return False
+    return True
 
 
 # init game
@@ -232,22 +249,16 @@ def generate_surfaces():
 
 # generate fonts
 def generate_fonts():
+    global text_moves_value
+
     text_font_big = pygame.font.SysFont("comicsansms", 24)
 
-    text_flows_label = text_font_big.render("Flows", False, WHITE)
-    text_flows_value = text_font_big.render("0/6", False, PURPLE)
-    text_pipes_label = text_font_big.render("Pipe", False, WHITE)
-    text_pipes_value = text_font_big.render("0 %", False, PURPLE)
-    text_moves_label = text_font_big.render("Moves", False, WHITE)
-    text_moves_value = text_font_big.render("0", False, PURPLE)
+    text_moves_label = text_font_big.render("Tries", False, WHITE)
+    text_moves_value = text_font_big.render(str(tries), False, PURPLE)
 
     main_surface.blit(grid_surface, (10, 10))
-    main_surface.blit(text_flows_label, (400, 50))
-    main_surface.blit(text_flows_value, (500, 50))
-    main_surface.blit(text_pipes_label, (400, 90))
-    main_surface.blit(text_pipes_value, (500, 90))
-    main_surface.blit(text_moves_label, (400, 130))
-    main_surface.blit(text_moves_value, (500, 130))
+    main_surface.blit(text_moves_label, (400, 50))
+    main_surface.blit(text_moves_value, (500, 50))
 
 
 # generate buttons
@@ -274,6 +285,7 @@ init_game()
 load_level(current_level)
 
 while running:
+
     generate_fonts()
 
     for event in pygame.event.get():
