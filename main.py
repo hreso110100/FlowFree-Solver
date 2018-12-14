@@ -20,7 +20,7 @@ BLUE = (0, 145, 234)
 YELLOW = (255, 234, 0)
 
 # global variables
-current_level = tries = solve_value = 0
+current_level = tries = 0
 running = True
 available_colors = ["RED", "BLUE", "GREEN", "PURPLE", "YELLOW"]
 
@@ -42,14 +42,14 @@ def parse_color_from_json(color):
 # load levels data from json file
 def load_level(loaded_level):
     global game_array, actual_color, start_position, final_position, visited_cells, connected_colors, \
-        backtrack_index, solved_index, tries
+        backtrack_index, solved_index, tries, solve_value
 
     text_font_big = pygame.font.SysFont("comicsansms", 28)
     game_array = numpy.empty((6, 6), dtype="U10")
     visited_cells = []
     connected_colors = []
     actual_color = ""
-    backtrack_index = solved_index = 0
+    backtrack_index = solved_index = solve_value = 0
 
     generate_surfaces()
     generate_buttons()
@@ -146,9 +146,8 @@ def find_possible_options(position):
 
 
 # backtrack implementation
-# 1 - win , 2 - lost, 0 - nothing
-def solve(current_position) -> int:
-    global backtrack_index, actual_color, solved_index, visited_cells, start_position, final_position, tries
+def solve(current_position):
+    global backtrack_index, actual_color, solved_index, visited_cells, start_position, final_position, tries, solve_value
 
     if current_position[0] == final_position[0] and current_position[1] == final_position[1]:
         if solved_index < len(available_colors) - 1:
@@ -161,7 +160,14 @@ def solve(current_position) -> int:
         start_position = numpy.argwhere(game_array == actual_color).tolist()[0]
         final_position = numpy.argwhere(game_array == actual_color).tolist()[1]
         visited_cells.append(start_position)
-        return 0
+
+        if len(connected_colors) == 5 and check_full_board():
+            solve_value = 1
+        elif len(connected_colors) == 5 and not check_full_board():
+            print("FIXUEJM")
+            load_level(current_level)
+
+        return
 
     options = find_possible_options(current_position)
 
@@ -177,7 +183,7 @@ def solve(current_position) -> int:
             if current_position == start_position:
                 load_level(current_level)
                 tries += 1
-                return 0
+                return
 
             game_array[current_position[0]][current_position[1]] = ""
             pygame.draw.circle(grid_surface, GREY,
@@ -186,21 +192,22 @@ def solve(current_position) -> int:
             option = visited_cells[backtrack_index]
         else:
             print("CANNOT SOLVE THAT LEVEL")
-            return 2
+            return
     generate_fonts()
     pygame.display.flip()
     solve(option)
-    return 0
+    return
 
 
 # handles click events on button
 def handle_click_buttons():
-    global solve_value
+    global solve_value, tries
 
     mouse_position = pygame.mouse.get_pos()
 
     # restart button click handling
     if 550 > mouse_position[0] > 400 and 320 > mouse_position[1] > 290:
+        tries = 0
         load_level(current_level)
 
     # new level button click handling
@@ -209,7 +216,7 @@ def handle_click_buttons():
 
     # solve level button click handling
     elif 550 > mouse_position[0] > 400 and 270 > mouse_position[1] > 240:
-        while len(connected_colors) != 5:
+        while solve_value == 0:
             solve(start_position)
 
 
