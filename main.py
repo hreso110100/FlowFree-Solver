@@ -77,12 +77,13 @@ def generate_new_level():
 
     tries = 0
 
-    if current_level < 2:
+    if current_level < 3:
         current_level += 1
     else:
         current_level = 0
 
     load_level(current_level)
+    print(game_array)
 
 
 # find possible options:
@@ -164,7 +165,6 @@ def solve(current_position):
         if len(connected_colors) == 5 and check_full_board():
             solve_value = 1
         elif len(connected_colors) == 5 and not check_full_board():
-            print("FIXUEJM")
             load_level(current_level)
 
         return
