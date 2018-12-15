@@ -22,6 +22,7 @@ YELLOW = (255, 234, 0)
 # global variables
 current_level = tries = 0
 running = True
+text_cannot_solve = ""
 available_colors = ["RED", "BLUE", "GREEN", "PURPLE", "YELLOW"]
 
 
@@ -83,7 +84,6 @@ def generate_new_level():
         current_level = 0
 
     load_level(current_level)
-    print(game_array)
 
 
 # find possible options:
@@ -148,7 +148,14 @@ def find_possible_options(position):
 
 # backtrack implementation
 def solve(current_position):
-    global backtrack_index, actual_color, solved_index, visited_cells, start_position, final_position, tries, solve_value
+    global backtrack_index, actual_color, solved_index, visited_cells, start_position, final_position, tries, solve_value, text_cannot_solve
+
+    if tries > 7054:
+        print("CANNOT SOLVE THAT LEVEL")
+        solve_value = 1
+        main_surface.blit(text_cannot_solve, (380, 100))
+        pygame.display.flip()
+        return
 
     if current_position[0] == final_position[0] and current_position[1] == final_position[1]:
         if solved_index < len(available_colors) - 1:
@@ -179,7 +186,6 @@ def solve(current_position):
         backtrack_index = 0
     else:
         if len(visited_cells) != 0:
-
             if current_position == start_position:
                 load_level(current_level)
                 tries += 1
@@ -256,12 +262,13 @@ def generate_surfaces():
 
 # generate fonts
 def generate_fonts():
-    global text_moves_value
+    global text_moves_value, text_cannot_solve
 
     text_font_big = pygame.font.SysFont("comicsansms", 24)
 
     text_moves_label = text_font_big.render("Tries", False, WHITE)
     text_moves_value = text_font_big.render(str(tries), False, PURPLE)
+    text_cannot_solve = text_font_big.render("CANNOT SOLVE !", False, RED)
 
     main_surface.blit(grid_surface, (10, 10))
     main_surface.blit(text_moves_label, (400, 50))
