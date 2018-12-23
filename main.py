@@ -150,13 +150,6 @@ def find_possible_options(position):
 def solve(current_position):
     global backtrack_index, actual_color, solved_index, visited_cells, start_position, final_position, tries, solve_value, text_cannot_solve
 
-    if tries > 7054:
-        print("CANNOT SOLVE THAT LEVEL")
-        solve_value = 1
-        main_surface.blit(text_cannot_solve, (380, 100))
-        pygame.display.flip()
-        return
-
     if current_position[0] == final_position[0] and current_position[1] == final_position[1]:
         if solved_index < len(available_colors) - 1:
             solved_index += 1
